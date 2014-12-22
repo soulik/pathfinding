@@ -66,14 +66,11 @@ do
 	end
 
 	local function drawMaze()
-		for y=1,maze.height do
-			for x=1,maze.width do
-				local cell = maze.map[{x, y}]
-				local cellType = (type(cell)=='table' and cell.type) or 0
-				local dx, dy = x*2, y*2
-				drawCell(dx, dy, cellType)
-				drawCellConnections(dx, dy, cell)
-			end
+		for position, cell in maze.iterator() do
+			local cellType = (type(cell)=='table' and cell.type) or 0
+			local dx, dy = position[1]*2, position[2]*2
+			drawCell(dx, dy, cellType)
+			drawCellConnections(dx, dy, cell)
 		end
 	end
 
