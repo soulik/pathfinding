@@ -5,7 +5,7 @@ Simple maze generator for LuaJIT with Win32 console output.
 
 General usage:
 
-```
+```lua
 local mazeGenerator = require 'maze'
 local maze = mazeGenerator {
 	width = 50,
