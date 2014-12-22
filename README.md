@@ -4,6 +4,7 @@ Maze Generator
 Simple maze generator for LuaJIT with Win32 console output.
 
 General usage:
+--------------
 
 ```lua
 local mazeGenerator = require 'maze'
@@ -32,8 +33,15 @@ local cellType = (type(cell)=='table' and cell.type) or 0
 
 ```
 
+Tests:
+------
+
 Run a test with (Win32 environment only due console handler):
 
 ```
 luajit tests/test.lua
 ```
+
+Screenshots:
+------------
+![alt text](https://github.com/soulik/maze_generator/raw/master/doc/maze001.png "Sample maze")

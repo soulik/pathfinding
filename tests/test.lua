@@ -21,8 +21,8 @@ do
 		[3] = {string.char(1),0x000A},		-- exit point
 		[4] = {'*',0x000A},					-- visited exit point
 		[5] = {string.char(178),0x003C},	-- backtraced path cell
-		[6] = {'|', 0x005F},				-- vertical connection
-		[7] = {'-', 0x005F},				-- horizontal connection
+		[6] = {string.char(177), 0x005F},				-- vertical connection
+		[7] = {string.char(177), 0x005F},				-- horizontal connection
 	}
 
 	local con = console.prepare()
