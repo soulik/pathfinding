@@ -1,8 +1,4 @@
-﻿if type(utils)~='table' then
-	utils = {}
-end
-
-utils.map2D = function(defaultValue)
+﻿return function(defaultValue)
 	local t = {}
 
 	--[[

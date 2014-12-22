@@ -1,8 +1,4 @@
-﻿if type(utils)~='table' then
-	utils = {}
-end
-
-utils.stack = function(initialData)
+﻿return function()
 	local t = {}
 
 	local out = {
@@ -16,13 +12,5 @@ utils.stack = function(initialData)
 			return not (#t > 0)
 		end,
 	}
-	if type(initialData)=='table' then
-		for _,v in ipairs(initialData) do
-			out.push(v)
-		end
-	elseif type(initialData)~='nil' then
-		out.push(initialData)
-	end
-
 	return out
 end

@@ -1,216 +1,164 @@
-﻿require 'set'
-require 'stack'
-require 'map2d'
-local console = require 'console'
+﻿local bit = require 'bit'
+local stack = require 'stack'
+local map2D = require 'map2d'
 
-function table.find(t, test)
-	local out = {}
-	if type(test)=='function' then
-		for i,v in ipairs(t) do
-			if test(v) then
-				table.insert(out, i)
-			end
-		end
-	elseif type(test)=='table' then
-		for i,v in ipairs(t) do
-			for j, v2 in ipairs(test) do
-				if v == v2 then
-					table.insert(out, i)
-					break
+return function(def)
+	local function prepareCell(t)
+		local cell = {
+			type = t or 0,
+			connections = 0,
+		}
+		return cell
+	end
+
+	local maze = def or {}
+	maze.width = def.width or 31
+	maze.height = def.height or 31
+	maze.map = map2D(false)
+	maze.entry = def.entry or {x = 2, y = 2}
+	maze.exit = def.exit or {x = 30, y = 4}
+	maze.finishOnExit = def.finishOnExit or false
+
+	local map = maze.map
+	local sx, sy = maze.entry.x, maze.entry.y
+	local fx, fy = maze.exit.x, maze.exit.y
+
+	local positionStack = stack()
+
+	local neighbordLocations = {
+		[0] = {0, 1},
+		[1] = {1, 0},
+		[2] = {0, -1},
+		[3] = {-1, 0},
+	}
+
+	local function neighbours(position0, fn)
+		local neighbours = {}
+		if type(fn)=="function" then
+			for i=0,3 do
+				local neighbourLocation = neighbordLocations[i] 
+				local position1 = {position0[1] + neighbourLocation[1], position0[2] + neighbourLocation[2]}
+				if (position1[1]>=1 and position1[1] <= maze.width and position1[2]>=1 and position1[2] <= maze.height) then
+					local cell = map[position1]
+					if fn(cell) then
+						table.insert(neighbours, {position1, cell, i})
+					end
 				end
 			end
 		end
-	else
-		for i,v in ipairs(t) do
-			if v==test then
-				table.insert(out, i)
+		return neighbours
+	end
+
+	local function Bdirection(n)
+		return 2^(n%4)
+	end
+
+	local function BreverseDirection(n)
+		return 2^((n+2)%4)
+	end
+
+	local function chooseOneElement(t)
+		if type(t)=='table' then
+			if #t == 1 then
+				return t[1]
+			else
+				return t[math.random(1, #t)]
 			end
 		end
 	end
-	return out
-end
 
-local maze = {
-	width = 31,
-	height = 31,
-	map = utils.map2D(0),
-	entry = {x = 2, y = 2},
-	exit = {x = 30, y = 4},
-}
-
--- prepare a maze
-do
-	local map = maze.map
-
-	local sx, sy = maze.entry.x, maze.entry.y
-	local fx, fy = maze.exit.x, maze.exit.y
-	
-	--[[
-	Direction
-
-		1
-	2		3
-		4
-
-	Cells
-	0 - not visited
-	1 - visited empty
-	2 - visited wall
-	3 - start
-	4 - exit
-	]]--
-
-	map[{maze.entry.x, maze.entry.y}] = 3
-	map[{maze.exit.x, maze.exit.y}] = 4
-
-	local x, y = sx, sy
-	local lastDirection = 3
-
-	local function chooseOne(set)
-		local r = r or {}
-		local t1 = {1, 2, 3, 4}
-		local t2 = removeElements(t1, r)
-		if #t2>1 then
-			return t2[math.random(1, #t2)]
-		elseif #t2 == 1 then
-			return t2[1]
+	local cellTestFn = function(cell)
+		if maze.finishOnExit then
+			return ((type(cell)=='boolean' and cell == false) or (type(cell)=='table' and (cell.type ~= 1 and cell.type ~= 2)))
 		else
-			return false
-		end
-	end
-
-	local positionStack = utils.stack()
-
-	local setMap = function(p, v)
-		local old = map[p]
-		if old == 0 then
-			map[p] = v
-		end
-	end
-
-	local function chooseDirection()
-   		local forbidden = utils.set()
-   		-- have a look around
-   		local v = {
-			map[{x, y - 2}],
-			map[{x - 2, y}],
-			map[{x + 2, y}],
-			map[{x, y + 2}]
-		}
-
-		-- map dimension limitation
-   		if x<=2 then
-   			forbidden.insert(2)
-   		elseif x>=maze.width-1 then
-   			forbidden.insert(3)
-   		end
-   		
-   		if y<=2 then
-   			forbidden.insert(1)
-   		elseif y>=maze.height-1 then
-   			forbidden.insert(4)
-   		end
-
-   		-- don't visit already visited cells
-		forbidden.insert(table.find(v, function(value)
-			return (value ~= 0) and (value ~= 4)
-		end))
-
-		local directions = utils.set({1,2,3,4})
-		directions.remove(forbidden)
-
-		if #directions > 1 then
-			return (directions.get())[math.random(1, #directions)]
-		elseif #directions == 1 then
-			return (directions.get())[1]
-		else
-			return false
+			return ((type(cell)=='boolean' and cell == false) or (type(cell)=='table' and (cell.type == 0 or cell.type == 3)))
 		end
 	end
 
 	local genMaze = coroutine.wrap(function()
-		while true do
-			local newDirection = chooseDirection()
-			
-			-- can we move?
-			if newDirection then
-				positionStack.push({x,y})
+		local position = {sx, sy}
+		local cell = prepareCell(2); map[position] = cell
+		map[{fx, fy}] = prepareCell(3)
 
-				-- connect cells with path and move	
-				if newDirection == 1 then
-					map[{x, y-1}] = 1
-					y = y - 2
-				elseif newDirection == 2 then
-					map[{x-1, y}] = 1
-					x = x - 2
-				elseif newDirection == 3 then
-					map[{x+1, y}] = 1
-					x = x + 2
-				elseif newDirection == 4 then
-					map[{x, y+1}] = 1
-					y = y + 2
+		while true do
+			local neighboursList = neighbours(position, cellTestFn)
+
+			if #neighboursList>0 then
+				-- choose one of the neighbours
+				local selectedCellInfo = chooseOneElement(neighboursList)
+				local selectedCell = selectedCellInfo[2]
+				local direction = selectedCellInfo[3]
+				local selectedCellPosition = selectedCellInfo[1]
+
+				-- push current cell into stack
+				positionStack.push({position, cell})
+
+				-- mark cell as visited
+				if type(selectedCell)~='table' then
+					selectedCell = prepareCell(1); map[selectedCellPosition] = selectedCell
+				else
+					selectedCell.type = 4	
 				end
 
-				map[{x, y}] = 1
-			
-				lastDirection = newDirection
+				-- connect current cell and selectedCell
+				cell.connections = bit.bor(cell.connections, Bdirection(direction))
+				selectedCell.connections = bit.bor(selectedCell.connections, BreverseDirection(direction))
+
+				-- is the selectedCell an exit?
+				if maze.finishOnExit and type(selectedCell)=='table' and selectedCell.type >= 3 then
+					-- do traceback
+					while not positionStack.empty() do
+						local position, cell = unpack(positionStack.pop())
+						if cell and cell.type == 1 then
+							cell.type = 5
+						end
+					end
+					break						
+				end
+
+				position = selectedCellPosition
+				cell = selectedCell
 			-- if there's no way to go, let's get back
 		    elseif not positionStack.empty() then
-		    	local pos = positionStack.pop()
-		    	x, y = pos[1], pos[2]
+		    	position, cell = unpack(positionStack.pop())
 				coroutine.yield(2)
 		    -- if there's no way to go and there is no solution for this path
 			else
+				for i=1,100 do
+					local selectedCellPosition = {math.random(1, maze.width), math.random(1, maze.height)}
+					local selectedCell = map[position]
+					if type(selectedCell)~='table' then
+						selectedCell = prepareCell(1); map[selectedCellPosition] = selectedCell
+
+						position = selectedCellPosition
+						cell = selectedCell
+						break
+					end
+				end
 				coroutine.yield(2)
 		    end
 
-			if x == fx and y == fy then
-				break
-			end
 			coroutine.yield(0)
 		end
    		coroutine.yield(1)
 	end)
 
-	--[[
-	***************** MAIN ***************
-	--]]
-
-	math.randomseed(os.time())
-
-	local tt = {
-		[0] = {string.char(219),0x0002},
-		[1] = {string.char(219),0x0001},
-		[2] = {'#',0x0007},
-		[3] = {'@',0x000C},
-		[4] = {string.char(1),0x000A},
-	}
-
-	local con = console.prepare()
-	os.execute( "cls" )
-
-	local function drawMaze()
-		for y=maze.height,1,-1 do
-			for x=1,maze.width do
-				local cell = map[{x, y}]
-				con.write(x, y, tt[cell][1], tt[cell][2])
+	maze.iterator = function()
+		local co = coroutine.create(function()
+			for y=1,maze.height do
+				for x=1,maze.width do
+					local position = {x, y}
+					coroutine.yield(position, map[position])
+				end
 			end
+			coroutine.yield()
+		end)
+		return function()
+			local code, pos, cell = coroutine.resume(co)
+			return pos, cell
 		end
 	end
 
-	map[{maze.entry.x, maze.entry.y}] = 3
-	map[{maze.exit.x, maze.exit.y}] = 4
-	for i=1,1000 do
-		local result = genMaze()
-		if result == 1 then
-			break
-		elseif result ~= 2 then
-			drawMaze()
-		end
-	end
-
-	map[{maze.entry.x, maze.entry.y}] = 3
-	map[{maze.exit.x, maze.exit.y}] = 4
-
-	drawMaze()
+	maze.generate = genMaze
+	return maze
 end
