@@ -1,4 +1,5 @@
-﻿local bit = require 'bit'
+﻿local serpent = require 'serpent'
+local bit = require 'bit'
 local stack = require 'stack'
 local map2D = require 'map2d'
 
@@ -118,6 +119,7 @@ return function(def)
 
 				position = selectedCellPosition
 				cell = selectedCell
+				coroutine.yield(0)
 			-- if there's no way to go, let's get back
 		    elseif not positionStack.empty() then
 		    	position, cell = unpack(positionStack.pop())
@@ -135,10 +137,8 @@ return function(def)
 						break
 					end
 				end
-				coroutine.yield(2)
+				coroutine.yield(3)
 		    end
-
-			coroutine.yield(0)
 		end
    		coroutine.yield(1)
 	end)
@@ -157,6 +157,29 @@ return function(def)
 			local code, pos, cell = coroutine.resume(co)
 			return pos, cell
 		end
+	end
+
+	maze.load = function(data)
+		local r, t =  serpent.load(data)
+		if r then
+			maze.width = t.width
+			maze.height = t.height
+			maze.entry = t.entry
+			maze.exit = t.exit
+			maze.finishOnExit = t.finishOnExit
+			maze.map.load(t.map)
+		end
+	end
+
+	maze.save = function()
+		return serpent.dump({
+			map = maze.map.save(),
+			width = maze.width,
+			height = maze.height,
+			entry = maze.entry,
+			exit = maze.exit,
+			finishOnExit = maze.finishOnExit,
+		})
 	end
 
 	maze.generate = genMaze

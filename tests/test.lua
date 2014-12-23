@@ -4,14 +4,9 @@ local console = require 'console'
 local bit = require 'bit'
 
 do
-	local maze = mazeGenerator {
-		width = 50,
-		height = 25,
-		entry = {x = 2, y = 2},
-		exit = {x = 30, y = 4},
-		finishOnExit = true,
-	}
+	local generateMaze = false
 
+	local maze
 	math.randomseed(os.time())
 
 	local tt = {
@@ -74,14 +69,53 @@ do
 		end
 	end
 
-	for i=1,1000 do
-		local result = maze.generate()
-		if result == 1 then
-			break
-		elseif result ~= 2 then
-			drawMaze()
+	local function loadMaze(fname)
+		local f = io.open(fname, 'rb')
+		if f then
+			local data = f:read('*a')
+			f:close()
+			maze.load(data)
 		end
 	end
 
+	local function saveMaze(fname)
+		local f = io.open(fname, 'wb')
+		if f then
+			f:write(maze.save())
+			f:close()
+		end
+	end
+
+	local blindAttempts = 0
+
+    maze = mazeGenerator {
+		width = 50,
+		height = 25,
+		entry = {x = 2, y = 2},
+		exit = {x = 30, y = 4},
+		finishOnExit = false,
+	}
+
+	if not generateMaze then
+		loadMaze('maze.bin')
+    else
+    	for i=1,10000 do
+    		local result = maze.generate()
+    		if result == 0 then
+    			blindAttempts = 0
+    		elseif result == 1 then
+    			break
+    		elseif result == 2 then
+    			drawMaze()
+    		elseif result == 3 then
+    			if blindAttempts>100 then
+    				break
+    			else
+    				blindAttempts = blindAttempts + 1
+    			end
+    		end
+    	end
+		saveMaze('maze.bin')
+	end
 	drawMaze()
 end

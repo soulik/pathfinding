@@ -1,4 +1,6 @@
-﻿return function(defaultValue)
+﻿local serpent = require 'serpent'
+
+return function(defaultValue)
 	local t = {}
 
 	--[[
@@ -23,12 +25,26 @@
 		return generalizedCantorPair({...})
 	end
 
+	local load = function(data)
+		r, t = serpent.load(data)
+		return r
+	end
+
+	local save = function()
+		return serpent.dump(t)
+	end
 
 	setmetatable(t, {
 		__index = function(_, k)
    			if type(k)=="table" then
    				local i = rawget(t, cantorPair(k[1] or 1, k[2] or 1))
    				return i or defaultValue
+   			elseif type(k)=="string" then
+   				if k=="load" then
+   					return load
+   				elseif k=="save" then
+   					return save
+   				end
    			end
    		end,
    		__newindex = function(_, k, v)
