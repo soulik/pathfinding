@@ -1,5 +1,6 @@
 ﻿package.path = '../?.lua;tests/?.lua;'..package.path
 local mazeGenerator = require 'maze'
+local mazeSolver = require 'mazeSolver'
 local console = require 'console'
 local bit = require 'bit'
 
@@ -18,6 +19,7 @@ do
 		[5] = {string.char(178),0x003C},	-- backtraced path cell
 		[6] = {string.char(177), 0x005F},				-- vertical connection
 		[7] = {string.char(177), 0x005F},				-- horizontal connection
+		[8] = {string.char(177), 0x0029},				-- visited cell
 	}
 
 	local con = console.prepare()
@@ -118,4 +120,39 @@ do
 		saveMaze('maze.bin')
 	end
 	drawMaze()
+
+	local stepsTaken = 0
+	local solver = mazeSolver(maze)
+	local solve = solver.solve()
+	local validPath
+
+	for i=1,10000 do
+		local result, p0 = solve()
+		if result then
+			validPath = p0
+			stepsTaken = i
+			break
+		elseif type(p0)=='table' then
+			--[[
+			local cell = maze.map[p0]
+			if type(cell)=='table' then
+				cell.type = 8
+			end
+			drawMaze()
+			]]--
+		end
+	end
+
+	if validPath then
+		while not validPath.empty() do
+			local position = validPath.pop()
+			local cell = maze.map[position]
+			if type(cell)=='table' then
+				cell.type = 8
+			end
+		end
+	end
+	drawMaze()
+
+	print('Steps', stepsTaken)
 end
