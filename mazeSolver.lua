@@ -54,7 +54,7 @@ return function(maze)
 				-- is this an exit?
 				if currentPosition[1] == exitPoint[1] and currentPosition[2] == exitPoint[2] then
 					--path.push(currentPosition)
-					return true, position
+					return true, currentPosition
 				else
 					local possiblePaths = neighbours(currentPosition, function(cell, position)
 						return (cell.type >= 1) and (not visitedCells[position])
