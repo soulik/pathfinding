@@ -113,31 +113,31 @@ return function(map)
             end
 
 			local function findPath()
-				local openSet = pqueue()
+				local frontier = pqueue()
 				local cameFrom = {}
 				local costSoFar = {
 					[start] = 0,
 				}
-				openSet[start] = 0
+				frontier[start] = 0
 				storeCell(start, goal)
 
-				while not openSet.empty() do
-					local current = assert((openSet.min())[1])
-
+				while not frontier.empty() do
+					local current = assert((frontier.min())[1])
+					-- current == goal?
 					if pEq(current, goal) then
 						local path = reconstructPath(cameFrom, goal)
 						coroutine.yield(true, path)
 						return path
 					end
-					openSet.remove(current)
+					frontier.remove(current)
 
 					for neighbour in neighbours(current) do
 						local newCost = costSoFar[current] + cost(current, neighbour)
 
 						if not costSoFar[neighbour] or (newCost < costSoFar[neighbour]) then
-							--dprint(("[%d, %d] - [%d, %d] = %0.4f %0.4f %s"):format(current[1], current[2], neighbour[1], neighbour[2], newCost, costSoFar[neighbour] or -1, tostring(openSet[neighbour])))
+							--dprint(("[%d, %d] - [%d, %d] = %0.4f %0.4f %s"):format(current[1], current[2], neighbour[1], neighbour[2], newCost, costSoFar[neighbour] or -1, tostring(frontier[neighbour])))
 							costSoFar[neighbour] = newCost
-							openSet[neighbour] = newCost + heuristicCostEstimate(neighbour, goal)
+							frontier[neighbour] = newCost + heuristicCostEstimate(goal, neighbour)
 							cameFrom[neighbour] = current
 						end
 					end
