@@ -64,13 +64,7 @@ do
 	if not generateMap then
 		loadMap('map.bin')
     else
-    	for i=1,10000 do
-    		local result = map.generate()
-    		if result == 1 then
-   				break
-   			else
-    		end
-    	end
+   		map.generate()
 		saveMap('map.bin')
 	end
 	--drawMap()
@@ -83,24 +77,10 @@ do
 	--local f = io.open('debug.log','w')
 
 	for i=1,10000 do
-		local result, p0, p1 = solve()
+		local result, p0 = solve()
 		if result then
 			validPath = p0
 			break
-		elseif type(p0)=='table' then
-			--f:write(("%s [%d, %d]\n"):format(tostring(p1), p0[1], p0[2]))
-			--[[
-			local cell = maze.map[p0]
-			if type(cell)=='table' then
-				if cell.type == 3 then
-					cell.type = 4
-				elseif cell.type == 4 then
-				else
-					cell.type = 8
-				end
-			end
-			drawMaze()
-			]]--
 		end
 	end
 
