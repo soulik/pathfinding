@@ -35,6 +35,7 @@ for i=1,10000 do
 end
 
 -- validPath will contain points of path from entry to exit point
+```
 
 Tests:
 ------
