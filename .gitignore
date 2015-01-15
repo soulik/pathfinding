@@ -1,0 +1,12 @@
+﻿*.swp
+*.sdf
+*.suo
+*.opensdf
+*.user
+*.dll
+*.exe
+std*.txt
+debug.txt
+*.log
+*.orig
+*.bak

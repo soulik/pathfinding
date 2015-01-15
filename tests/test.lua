@@ -1,158 +1,116 @@
 ﻿package.path = '../?.lua;tests/?.lua;'..package.path
-local mazeGenerator = require 'maze'
-local mazeSolver = require 'mazeSolver'
+local mapGenerator = require 'map'
+local mapSolver = require 'mapSolver'
 local console = require 'console'
 local bit = require 'bit'
 
 do
-	local generateMaze = false
+	local generateMap = true
 
-	local maze
+	local map
 	math.randomseed(os.time())
 
 	local tt = {
-		[0] = {string.char(176),0x0001},	-- a wall
-		[1] = {string.char(178),0x0057},	-- an empty cell
-		[2] = {'@',0x000C},					-- start point
-		[3] = {string.char(1),0x000A},		-- exit point
-		[4] = {'*',0x000A},					-- visited exit point
-		[5] = {string.char(178),0x003C},	-- backtraced path cell
-		[6] = {string.char(177), 0x005F},				-- vertical connection
-		[7] = {string.char(177), 0x005F},				-- horizontal connection
-		[8] = {string.char(177), 0x0029},				-- visited cell
+		[0] = {string.char(219),0x0057},	-- a wall
+		[1] = {string.char(177),0x0001},	-- an empty cell
+		[2] = {string.char(178),0x000A},	-- an empty cell
 	}
 
 	local con = console.prepare()
 	os.execute( "cls" )
 
 	local function drawCell(x, y, cellType)
-		con.write(x, y, tt[cellType][1], tt[cellType][2])
-	end
-
-	--[[
-	Connections bit-mask values:
-		1
-	8	*	2
-		4
-	Note: Coordinate system starts at bottom-left corner of the screen
-
-	--]]
-	local function drawCellConnections(x, y, cell)
-		local cellType = (type(cell)=='table' and cell.type) or 0
-
-		if cellType >= 1 then
-			local c = cell.connections or 0x00
-
-   			if bit.band(c, 0x01) > 0 then
-   				local cPos = {x = 0, y = 1}
-   				drawCell(x + cPos.x, y + cPos.y, 6)
-   			end
-   			if bit.band(c, 0x02) > 0 then
-   				local cPos = {x = 1, y = 0}
-   				drawCell(x + cPos.x, y + cPos.y, 7)
-   			end
-   			if bit.band(c, 0x04) > 0 then
-   				local cPos = {x = 0, y = -1}
-   				drawCell(x + cPos.x, y + cPos.y, 6)
-   			end
-   			if bit.band(c, 0x08) > 0 then
-   				local cPos = {x = -1, y = 0}
-   				drawCell(x + cPos.x, y + cPos.y, 7)
- 			end
+		if tt[cellType] then
+			con.write(x, y, tt[cellType][1], tt[cellType][2])
+			con.write(x+1, y, tt[cellType][1], tt[cellType][2])
 		end
 	end
 
-	local function drawMaze()
-		for position, cell in maze.iterator() do
-			local cellType = (type(cell)=='table' and cell.type) or 0
-			local dx, dy = position[1]*2, position[2]*2
-			drawCell(dx, dy, cellType)
-			drawCellConnections(dx, dy, cell)
+	local function drawMap()
+		for position, cell in map.iterator() do
+			local cellType = cell or 0
+			local dx, dy = position[1], position[2]
+			drawCell(dx*2, dy, cellType)
 		end
 	end
 
-	local function loadMaze(fname)
+	local function loadMap(fname)
 		local f = io.open(fname, 'rb')
 		if f then
 			local data = f:read('*a')
 			f:close()
-			maze.load(data)
+			map.load(data)
 		end
 	end
 
-	local function saveMaze(fname)
+	local function saveMap(fname)
 		local f = io.open(fname, 'wb')
 		if f then
-			f:write(maze.save())
+			f:write(map.save())
 			f:close()
 		end
 	end
 
 	local blindAttempts = 0
 
-    maze = mazeGenerator {
-		width = 50,
+    map = mapGenerator {
+		width = 25,
 		height = 25,
-		entry = {x = 2, y = 2},
-		exit = {x = 30, y = 4},
+		entry = {x = 15, y = 7},
+		exit = {x = 23, y = 10},
 		finishOnExit = false,
 	}
 
-	if not generateMaze then
-		loadMaze('maze.bin')
+	if not generateMap then
+		loadMap('map.bin')
     else
     	for i=1,10000 do
-    		local result = maze.generate()
-    		if result == 0 then
-    			blindAttempts = 0
-    		elseif result == 1 then
-    			break
-    		elseif result == 2 then
-    			drawMaze()
-    		elseif result == 3 then
-    			if blindAttempts>100 then
-    				break
-    			else
-    				blindAttempts = blindAttempts + 1
-    			end
+    		local result = map.generate()
+    		if result == 1 then
+   				break
+   			else
     		end
     	end
-		saveMaze('maze.bin')
+		saveMap('map.bin')
 	end
-	drawMaze()
+	--drawMap()
 
 	local stepsTaken = 0
-	local solver = mazeSolver(maze)
+	local solver = mapSolver(map)
 	local solve = solver.solve()
 	local validPath
 
+	--local f = io.open('debug.log','w')
+
 	for i=1,10000 do
-		local result, p0 = solve()
+		local result, p0, p1 = solve()
 		if result then
 			validPath = p0
-			stepsTaken = i
 			break
 		elseif type(p0)=='table' then
+			--f:write(("%s [%d, %d]\n"):format(tostring(p1), p0[1], p0[2]))
 			--[[
 			local cell = maze.map[p0]
 			if type(cell)=='table' then
-				cell.type = 8
+				if cell.type == 3 then
+					cell.type = 4
+				elseif cell.type == 4 then
+				else
+					cell.type = 8
+				end
 			end
 			drawMaze()
 			]]--
 		end
 	end
 
-	if validPath then
-		while not validPath.empty() do
-			local position = validPath.pop()
-			local cell = maze.map[position]
-			if type(cell)=='table' then
-				cell.type = 8
-			end
-		end
-	end
-	drawMaze()
+	local mapCells = map.map
 
-	print('Steps', stepsTaken)
+	for _, p in ipairs(validPath) do
+		mapCells[p] = 2
+	end
+	
+	drawMap()
+
+	print('Steps', #validPath)
 end
