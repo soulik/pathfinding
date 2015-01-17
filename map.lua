@@ -38,18 +38,37 @@ return function(def)
 		}
 	}
 
-	local genMap = coroutine.wrap(function()
-		local shape =  shapes['c']
+	local function pushShape(name, offset, orientation)
+		local shape =  shapes[name]
 		local data = shape.data
-		local offset = {x=12, y=4}
+		local orientation = orientation or {1, 1}
 
 		for y=0,shape.h-1 do
 			for x=0,shape.w-1 do
-				local pos = {offset.x + x, offset.y + y}
-				local v = data[x + y*shape.w + 1]
-				mapCells[pos] = v
+				local pos = {offset[1] + x, offset[2] + y}
+				local sx, sy
+				if orientation[1]>0 then
+					sx = math.floor(x*orientation[1])
+				else
+					sx = math.floor(shape.w + x*orientation[1] - 1)
+				end
+				if orientation[2]>0 then
+					sy = math.floor(y*orientation[2])
+				else
+					sy = math.floor(shape.h + y*orientation[2] - 1)
+				end
+
+				local v = data[sx + sy*shape.w + 1]
+				if mapCells[pos] ~= 0 then
+					mapCells[pos] = v
+				end
 			end
 		end
+	end
+
+	local genMap = coroutine.wrap(function()
+		pushShape('c', {12, 4}, {1,1})
+		pushShape('c', {17, 8}, {-1,1})
 		coroutine.yield(1)
 	end)
 

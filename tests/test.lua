@@ -57,7 +57,7 @@ do
 		width = 25,
 		height = 25,
 		entry = {x = 15, y = 7},
-		exit = {x = 23, y = 11},
+		exit = {x = 23, y = 15},
 		finishOnExit = false,
 	}
 
