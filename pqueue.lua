@@ -13,10 +13,14 @@ end
 return function ()
 	local t = {}
 
+	-- a set of elements
 	local set = {}
+	-- a set of priorities paired with a elements
 	local r_set = {}
+	-- sorted list of priorities
 	local keys = {}
 
+	-- add element into storage and set its priority and sort keys
 	local function addKV(k, v)
        	set[k] = v
 		if not r_set[v] then
@@ -32,39 +36,46 @@ return function ()
 		end
 	end
 
+	-- remove element from storage and sort keys
 	local remove = function(k)
-       	local oldV = set[k]
-       	local oldRset = r_set[oldV]
-       	tr2(oldRset, k)
-       	if #oldRset < 1 then
-       		tr2(keys, oldV)
-			r_set[oldV] = nil
+       	local v = set[k]
+       	local prioritySet = r_set[v]
+       	tr2(prioritySet, k)
+       	if #prioritySet < 1 then
+       		tr2(keys, v)
+			r_set[v] = nil
 			table.sort(keys)
 			set[k] = nil
        	end
 	end; t.remove = remove
 
+	-- returns an element with the lowest priority
 	t.min = function()
-		return r_set[keys[1]] or {}
+		local priority = keys[1]
+		if priority then
+			return r_set[priority] or {}
+		else
+			return {}
+		end
 	end
 
+	-- returns an element with the highest priority
 	t.max = function()
-		return r_set[keys[#keys]] or {}
+		local priority = keys[#keys]
+		if priority then
+			return r_set[priority] or {}
+		else
+			return {}
+		end
 	end
 
+	-- is this queue empty?
 	t.empty = function()
 		return #keys < 1
 	end
 
 	setmetatable(t, {
-		__index = function(t, k)
-			local v = set[k]
-			if v then
-				return v
-			else
-				return false
-			end
-		end,
+		__index = set,
 		__newindex = function(t, k, v)
 			if not set[k] then
 				-- new item

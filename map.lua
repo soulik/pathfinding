@@ -1,6 +1,5 @@
 ﻿local serpent = require 'serpent'
 local bit = require 'bit'
-local stack = require 'stack'
 local map2D = require 'map2d'
 
 return function(def)
@@ -15,8 +14,6 @@ return function(def)
 	local mapCells = map.map
 	local sx, sy = map.entry.x, map.entry.y
 	local fx, fy = map.exit.x, map.exit.y
-
-	local positionStack = stack()
 
 	local shapes = {
 		['c'] = {

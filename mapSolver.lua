@@ -1,8 +1,5 @@
 ﻿local bit = require 'bit'
-local stack = require 'stack'
-local set = require 'set'
 local pqueue = require 'pqueue'
-local map2D = require 'map2d'
 
 local function dprint(fmt, ...)
 	local f = io.open('debug.log','a')
@@ -105,11 +102,6 @@ return function(map)
 			        current = cameFrom[current]
 			    end
 			    return totalPath
-            end
-
-            local function tFn(p)
-            	local cell = mapCells[p]
-				return cell == 0
             end
 
 			local function findPath()
